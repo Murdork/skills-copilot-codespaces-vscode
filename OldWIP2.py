@@ -373,7 +373,7 @@ def _summary_by_item():
     return agg
 
 def run_earnings_report():
-    """Option 2: print Summary by Hire, Summary by Item, and Detail lines."""
+    """Option 2: print Summary by Hire and Detail lines."""
     if not HIRE_RECORDS:
         print("\nNo hire data to report yet.")
         return
@@ -388,16 +388,7 @@ def run_earnings_report():
     print("-" * 54)
     print(f"TOTAL EARNINGS: {money(grand_total)}")
 
-    # ---- Section 2: SUMMARY BY ITEM
-    agg = _summary_by_item()
-    print("\nSummary by Item:")
-    print("CODE  ITEM                         HIRES  QTY  ITEM-DAYS  LATE  REVENUE")
-    print("----  ---------------------------  -----  ---  ---------  ----  --------")
-    for code in sorted(agg.keys()):
-        a = agg[code]
-        print(f"{code:<4}  {a['name'][:27]:<27}  {a['hires']:>5}  {a['qty']:>3}  {a['item_days']:>9}  {a['late_lines']:>4}  {money(a['revenue_p']):>8}")
-
-    # ---- Section 3: DETAIL LINES (ALL ENTERED DATA)
+    # ---- Section 2: DETAIL LINES (ALL ENTERED DATA)
     print("\nDetail lines (all entered data):")
     print("ID   CODE  ITEM                                NIGHT  QTY  OVERDUE  LATE  "
           "BASE     OVERDUE   PENALTY   LINE TOTAL")
