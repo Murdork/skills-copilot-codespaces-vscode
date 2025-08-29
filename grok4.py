@@ -3,9 +3,12 @@
 # No external modules are imported as per assignment constraints.
 # Data is stored in a list of dictionaries for accessibility across functions.
 # Input validation is included where applicable.
-# Equipment now uses 3-letter codes for input, mapped to full names and prices.
+# Equipment uses 3-letter codes for input, mapped to full names and prices.
 # Customer details (except ID) are entered in a single comma-separated line.
-# Hire details remain in a single comma-separated line, but using item codes.
+# Hire items are entered on separate lines (code,qty per line) until empty input.
+# Number of nights asked separately.
+# Returned after 2pm (late) asked separately as Y/N.
+# Credit card input validated to be exactly 4 digits.
 # Total cost calculation: base price for first night, 50% of base for each additional night, plus 50% of base if late return.
 
 # Define equipment with 3-letter codes (read-only reference data)
@@ -31,6 +34,7 @@ def main_menu():
     """
     Displays the main menu and handles user choices.
     Loops until Exit is selected.
+    For Option 1, loops to allow multiple hires until user chooses not to enter another.
     """
     while True:
         print("\nMain Menu:")
@@ -41,7 +45,14 @@ def main_menu():
         
         # Input validation for menu choice
         if choice == '1':
-            hire_equipment()
+            while True:
+                hire_equipment()
+                again = input("\nWould you like to enter another new hire? (Y/N): ").strip().upper()
+                while again not in ['Y', 'N']:
+                    print("Invalid input: must be Y or N.")
+                    again = input("Would you like to enter another new hire? (Y/N): ").strip().upper()
+                if again != 'Y':
+                    break
         elif choice == '2':
             earnings_report()
         elif choice == '3':
@@ -54,10 +65,11 @@ def hire_equipment():
     """
     Subroutine for Option 1: Records customer and hire details.
     Prompts for customer ID with validation (non-empty).
-    Then prompts for a single comma-separated line for name, phone, house, postcode, card.
-    Validates that exactly 5 parts are provided and non-empty.
-    Then prompts for a single comma-separated line for hire details using codes.
-    Parses and validates the input.
+    Then prompts for a single comma-separated line for name, phone, house, postcode, last 4 digits of card.
+    Validates that exactly 5 parts are provided, non-empty, and card is 4 digits.
+    Then loops to enter item code,qty on separate lines until empty input.
+    Then asks for number of nights separately.
+    Then asks if returned after 2pm (late) as Y/N.
     Stores the hire in the global hires list.
     """
     print("\nEntering Customer and Hire Details:")
@@ -71,11 +83,11 @@ def hire_equipment():
     
     # Prompt for customer details as single line
     while True:
-        line = input("\nEnter customer details as: Name,Phone,House Number,Postcode,Card Reference: ").strip()
+        line = input("\nEnter customer details as: Name,Phone,House Number,Postcode,Last 4 Digits of Card: ").strip()
         parts = [p.strip() for p in line.split(',') if p.strip()]
         
         if len(parts) != 5:
-            print("Invalid input: Exactly 5 comma-separated values required (Name,Phone,House Number,Postcode,Card Reference).")
+            print("Invalid input: Exactly 5 comma-separated values required (Name,Phone,House Number,Postcode,Last 4 Digits of Card).")
             continue
         
         name, phone, house_number, postcode, card = parts
@@ -83,74 +95,83 @@ def hire_equipment():
             print("All fields must be non-empty.")
             continue
         
-        break
-    
-    # Now prompt for the single comma-separated line for hire details using codes
-    while True:
-        line = input("\nEnter hire details as: code1,qty1,code2,qty2,...,nights,returned_on_time(Y/N): ").strip()
-        parts = [p.strip() for p in line.split(',') if p.strip()]
-        
-        equipment = {}
-        i = 0
-        valid = True
-        
-        # Parse code-qty pairs until the last two parts
-        while i < len(parts) - 2 and valid:
-            code = parts[i].upper()  # Normalize to uppercase
-            if code not in equipment_data:
-                print(f"Invalid code: '{code}'. Must be one of: {', '.join(equipment_data.keys())}")
-                valid = False
-                break
-            i += 1
-            try:
-                qty = int(parts[i])
-                if qty <= 0:
-                    print(f"Quantity for '{code}' must be a positive integer.")
-                    valid = False
-                    break
-                equipment[code] = qty
-            except ValueError:
-                print(f"Invalid quantity for '{code}': must be an integer.")
-                valid = False
-                break
-            i += 1
-        
-        # Check if parsing stopped at the correct position and equipment is not empty
-        if not valid or i != len(parts) - 2 or not equipment:
-            print("Invalid input format. Please try again.")
+        # Validate card is exactly 4 digits
+        if not (len(card) == 4 and card.isdigit()):
+            print("Last 4 digits of card must be exactly 4 numeric digits.")
             continue
         
-        # Parse nights
+        break
+    
+    # Now enter items on separate lines
+    equipment = {}
+    print("\nEnter equipment items one per line as: code,qty (e.g., DAY,2). Enter empty line to finish.")
+    while True:
+        line = input().strip()
+        if not line:
+            break
+        parts = [p.strip() for p in line.split(',') if p.strip()]
+        if len(parts) != 2:
+            print("Invalid input: Must be code,qty.")
+            continue
+        code, qty_str = parts
+        code = code.upper()  # Normalize to uppercase
+        if code not in equipment_data:
+            print(f"Invalid code: '{code}'. Must be one of: {', '.join(equipment_data.keys())}")
+            continue
         try:
-            nights = int(parts[i])
+            qty = int(qty_str)
+            if qty <= 0:
+                print(f"Quantity for '{code}' must be a positive integer.")
+                continue
+            if code in equipment:
+                equipment[code] += qty  # Add to existing if duplicate
+            else:
+                equipment[code] = qty
+        except ValueError:
+            print(f"Invalid quantity for '{code}': must be an integer.")
+            continue
+    
+    if not equipment:
+        print("No equipment entered. Hire not recorded.")
+        return
+    
+    # Ask for number of nights
+    while True:
+        nights_str = input("\nEnter number of nights: ").strip()
+        try:
+            nights = int(nights_str)
             if nights < 1:
                 print("Number of nights must be at least 1.")
                 continue
+            break
         except ValueError:
             print("Invalid number of nights: must be an integer.")
-            continue
-        i += 1
-        
-        # Parse returned on time
-        on_time_input = parts[i].upper()
-        if on_time_input not in ['Y', 'N']:
-            print("Invalid returned on time: must be Y or N.")
-            continue
-        
-        # All valid - store the hire
-        hires.append({
-            'customer_id': customer_id,
-            'name': name,
-            'phone': phone,
-            'house_number': house_number,
-            'postcode': postcode,
-            'card': card,
-            'equipment': equipment,  # Stores codes and qtys
-            'nights': nights,
-            'returned_on_time': (on_time_input == 'Y')
-        })
-        print("Hire details recorded successfully.")
-        break
+    
+    # Ask if returned after 2pm (late)
+    while True:
+        on_time_input = input("\nWas the equipment returned after 2pm? (Y/N): ").strip().upper()
+        if on_time_input in ['Y', 'N']:
+            returned_on_time = (on_time_input == 'N')  # Y means after 2pm (not on time), N means before or on 2pm (on time)
+            break
+        else:
+            print("Invalid input: must be Y or N.")
+    
+    # Ask if return is late - but since scenario ties late to after 2pm, we'll use the same for now.
+    # If needed, add another question, but assuming it's the same.
+
+    # Store the hire
+    hires.append({
+        'customer_id': customer_id,
+        'name': name,
+        'phone': phone,
+        'house_number': house_number,
+        'postcode': postcode,
+        'card': card,
+        'equipment': equipment,  # Stores codes and qtys
+        'nights': nights,
+        'returned_on_time': returned_on_time
+    })
+    print("Hire details recorded successfully.")
 
 def earnings_report():
     """
@@ -176,10 +197,10 @@ def earnings_report():
         # Calculate base cost using prices
         base = sum(qty * equipment_data[code][1] for code, qty in hire['equipment'].items())
         
-        # Additional nights cost (50% discount, i.e., 50% of base per additional night)
+        # Additional nights cost (50% of base per additional night)
         additional = 0.5 * base * max(0, hire['nights'] - 1)
         
-        # Extra charge if late
+        # Extra charge if not on time (late)
         extra = 0.5 * base if not hire['returned_on_time'] else 0.0
         
         # Total cost
@@ -189,7 +210,7 @@ def earnings_report():
         on_time_str = 'y' if hire['returned_on_time'] else 'n'
         
         # Print row
-        print(f"{hire['customer_id']:<15}{equip_summary:<60}{hire['nights']:<10}{total:.2f:<15}{on_time_str:<25}{extra:.2f:<30}")
+        print(f"{hire['customer_id']:<15}{equip_summary:<60}{hire['nights']:<10}{total:<15.2f}{on_time_str:<25}{extra:<30.2f}")
 
 # Start the program
 if __name__ == "__main__":
