@@ -159,7 +159,7 @@ def read_positive_int(prompt: str, min_value: int = 1) -> int:
             print("Please enter a whole number."); continue
         n = int(s)
         if n < min_value:
-            print(f"Please enter a number ≥ {min_value}."); continue
+            print(f"Please enter a number >= {min_value}."); continue
         return n
 
 def read_item_lines(nights: int, returned_on_time: str) -> list[dict]:
@@ -189,7 +189,7 @@ def read_item_lines(nights: int, returned_on_time: str) -> list[dict]:
             print("Quantity must be a whole number."); continue
         qty = int(parts[1])
         if qty < 1:
-            print("Quantity must be ≥ 1."); continue
+            print("Quantity must be >= 1."); continue
 
         # --- pricing for this line ---
         daily: int = int(item["daily_p"])
@@ -225,7 +225,7 @@ def run_hire_flow() -> None:
             print("Returning to main menu.")
             return
 
-        nights: int = read_positive_int("Number of nights (≥1): ", 1)
+        nights: int = read_positive_int("Number of nights (>=1): ", 1)
         returned_on_time: str = read_yes_no("Returned on time (y/n)? ")
         lines: list[dict] = read_item_lines(nights, returned_on_time)
 
@@ -250,7 +250,7 @@ def run_hire_flow() -> None:
         }
         HIRE_RECORDS.append(hire)
 
-        items_summary = "; ".join([f"{ln['name']} – {ln['qty']}" for ln in lines])
+        items_summary = "; ".join([f"{ln['name']} - {ln['qty']}" for ln in lines])
         print("\nSaved hire:")
         print(f"  Customer ID: {hire['customer_id']}")
         print(f"  Equipment:   {items_summary}")
@@ -290,7 +290,7 @@ def earnings_report() -> None:
     )
 
     for r in HIRE_RECORDS:
-        equip_summary = "; ".join(f"{ln['name']} – {ln['qty']}" for ln in r["lines"])
+        equip_summary = "; ".join(f"{ln['name']} - {ln['qty']}" for ln in r["lines"])
         nights = str(r["nights"])
         total = money(int(r["total_p"]))
         on_time = str(r["returned_on_time"])  # 'y' / 'n'
